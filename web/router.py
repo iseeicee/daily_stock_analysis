@@ -327,6 +327,12 @@ def create_default_router() -> Router:
         lambda q: api_handler.handle_task_status(q),
         "查询任务状态"
     )
+
+    router.register(
+        "/logs", "GET",
+        lambda q: page_handler.handle_logs(q),
+        "查询系统日志"
+    )
     
     # === Bot Webhook 路由 ===
     # 注意：Bot Webhook 路由在 dispatch_post 中特殊处理

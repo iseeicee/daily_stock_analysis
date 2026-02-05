@@ -20,8 +20,8 @@ A股自选股智能分析系统 - 环境验证测试
 
 """
 import os
-os.environ["http_proxy"] = "http://127.0.0.1:10809"
-os.environ["https_proxy"] = "http://127.0.0.1:10809"
+# os.environ["http_proxy"] = "http://127.0.0.1:10809"
+# os.environ["https_proxy"] = "http://127.0.0.1:10809"
 
 import argparse
 import logging
@@ -317,13 +317,13 @@ def test_notification():
     service = NotificationService()
     
     print_section("配置检查")
-    if service.is_available():
-        print(f"  ✓ 企业微信 Webhook 已配置")
-        webhook_preview = config.wechat_webhook_url[:50] + "..." if len(config.wechat_webhook_url) > 50 else config.wechat_webhook_url
-        print(f"    URL: {webhook_preview}")
-    else:
-        print(f"  ✗ 企业微信 Webhook 未配置")
-        return False
+    # if service.is_available():
+    #     print(f"  ✓ 企业微信 Webhook 已配置")
+    #     webhook_preview = config.wechat_webhook_url[:50] + "..." if len(config.wechat_webhook_url) > 50 else config.wechat_webhook_url
+    #     print(f"    URL: {webhook_preview}")
+    # else:
+    #     print(f"  ✗ 企业微信 Webhook 未配置")
+    #     return False
     
     print_section("发送测试消息")
     
@@ -339,7 +339,7 @@ def test_notification():
     print(f"  正在发送...")
     
     try:
-        success = service.send_to_wechat(test_message)
+        success = service.send_to_custom(test_message)
         
         if success:
             print(f"  ✓ 消息发送成功，请检查企业微信")

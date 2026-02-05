@@ -10,6 +10,7 @@ Web 服务层 - 业务逻辑
 """
 
 from __future__ import annotations
+from pathlib import Path
 
 import os
 import re
@@ -34,6 +35,9 @@ _ENV_PATH = os.getenv("ENV_FILE", ".env")
 _STOCK_LIST_RE = re.compile(
     r"^(?P<prefix>\s*STOCK_LIST\s*=\s*)(?P<value>.*?)(?P<suffix>\s*)$"
 )
+_LOG_DIR_RE = re.compile(
+    r"^(?P<prefix>\s*LOG_DIR\s*=\s*)(?P<value>.*?)(?P<suffix>\s*)$"
+)
 
 
 class ConfigService:
@@ -45,7 +49,7 @@ class ConfigService:
     
     def __init__(self, env_path: Optional[str] = None):
         self.env_path = env_path or _ENV_PATH
-    
+
     def read_env_text(self) -> str:
         """读取 .env 文件内容"""
         try:
@@ -83,7 +87,7 @@ class ConfigService:
     def get_env_filename(self) -> str:
         """获取 .env 文件名"""
         return os.path.basename(self.env_path)
-    
+
     def _extract_stock_list(self, env_text: str) -> str:
         """从环境文件中提取 STOCK_LIST 值"""
         for line in env_text.splitlines():
@@ -126,6 +130,43 @@ class ConfigService:
         trailing_newline = env_text.endswith("\n") if env_text else True
         out = "\n".join(out_lines)
         return out + ("\n" if trailing_newline else "")
+
+    def get_log_content(self) -> str:
+        """获取当前自选股列表字符串"""
+        env_text = self.read_env_text()
+        log_dir = self._extract_log_dir(env_text)
+
+        log_path = Path(log_dir)
+        """read files under this path and find the latest one"""
+        log_files = [f for f in log_path.iterdir() if f.is_file()]
+        if log_files:
+            latest_file = max(log_files, key=lambda f: f.stat().st_mtime)
+            logger.info(f"[AnalysisService] start to read log file: {str(latest_file)}")
+
+            """read log file and get last 100 lines"""
+            with open(latest_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()[-100:]
+                # log_content = "".join(lines)
+                logger.info(f"[AnalysisService] end to read log file: {str(latest_file)}")
+            return str(lines)
+        return ""
+
+    def get_logs(self) -> str:
+        """获取 logs目录下的文件内容"""
+        return os.path.basename(self.env_path)
+
+    def _extract_log_dir(self, env_text: str) -> str:
+        """从环境文件中提取 LOG_DIR 值"""
+        for line in env_text.splitlines():
+            m = _LOG_DIR_RE.match(line)
+            if m:
+                raw = m.group("value").strip()
+                # 去除引号
+                if (raw.startswith('"') and raw.endswith('"')) or \
+                        (raw.startswith("'") and raw.endswith("'")):
+                    raw = raw[1:-1]
+                return raw
+        return ""
 
 
 # ============================================================

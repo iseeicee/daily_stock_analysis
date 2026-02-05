@@ -95,8 +95,8 @@ sudo apt update
 sudo apt install -y python3.10 python3.10-venv python3-pip
 
 # 创建虚拟环境
-python3.10 -m venv /opt/stock-analyzer/venv
-source /opt/stock-analyzer/venv/bin/activate
+python3 -m venv /opt/deploy/stock_analyzer/venv
+source /opt/deploy/stock_analyzer/venv/bin/activate
 ```
 
 ### 2. 安装依赖
@@ -121,9 +121,12 @@ python main.py
 
 # 定时任务模式（前台运行）
 python main.py --schedule
+python3 main.py --webui-only
 
 # 后台运行（使用 nohup）
 nohup python main.py --schedule > /dev/null 2>&1 &
+nohup python3 main.py --webui-only > /dev/null 2>&1 &
+
 ```
 
 ---

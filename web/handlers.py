@@ -24,7 +24,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
 from web.services import get_config_service, get_analysis_service
-from web.templates import render_config_page
+from web.templates import render_config_page, render_log_page
 from src.enums import ReportType
 
 if TYPE_CHECKING:
@@ -120,6 +120,27 @@ class PageHandler:
         body = render_config_page(normalized, env_filename, message="已保存")
         return HtmlResponse(body)
 
+    def handle_logs(self, query: Dict[str, list]) -> Response:
+        """
+        触发日志分析 GET /logs
+
+        Args:
+            query: URL 查询参数
+
+        返回:
+            {
+                "success": true,
+                "message": "分析任务已提交",
+                "code": "600519",
+                "task_id": "600519_20260119_103000"
+            }
+        """
+        # 获取股票代码参数
+        code_list = query.get("code", [])
+        # 提交异步分析任务
+        log_content = self.config_service.get_log_content()
+        body = render_log_page("logs", log_content)
+        return HtmlResponse(body)
 
 # ============================================================
 # API 处理器

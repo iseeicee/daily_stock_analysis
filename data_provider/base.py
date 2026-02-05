@@ -12,6 +12,10 @@
 1. 每个 Fetcher 内置流控逻辑
 2. 失败自动切换到下一个数据源
 3. 指数退避重试机制
+
+A股市场：使用 baostock、mootdx，以及开通 QMT 后的 xtquant
+港股市场：使用 LongPort API、mootdx、Yahoo Finance
+美股市场：使用 LongPort API、Yahoo Finance、Alpaca API、IBKR API
 """
 
 import logging

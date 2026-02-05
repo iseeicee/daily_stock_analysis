@@ -13,6 +13,7 @@ Web 模板层 - HTML 页面生成
 from __future__ import annotations
 
 import html
+import re
 from typing import Optional
 
 
@@ -634,6 +635,7 @@ def render_config_page(
 (function() {
     const codeInput = document.getElementById('analysis_code');
     const submitBtn = document.getElementById('analysis_btn');
+    const logsBtn = document.getElementById('logs_btn');
     const taskList = document.getElementById('task_list');
     const reportTypeSelect = document.getElementById('report_type');
     
@@ -669,7 +671,7 @@ def render_config_page(
         const code = codeInput.value.trim();
         const isAStock = /^\\d{6}$/.test(code);           // A股: 600519
         const isHKStock = /^HK\\d{5}$/.test(code);        // 港股: HK00700
-        const isUSStock =  /^[A-Z]{1,5}(\.[A-Z]{1,2})?$/.test(code); // 美股: AAPL
+        const isUSStock =  /^[A-Z]{1,5}(\\.[A-Z]{1,2})?$/.test(code); // 美股: AAPL
 
         submitBtn.disabled = !(isAStock || isHKStock || isUSStock);
     }
@@ -744,7 +746,7 @@ def render_config_page(
                 '<div class="task-meta">' +
                     '<span>⏱ ' + formatTime(task.start_time) + '</span>' +
                     '<span>⏳ ' + calcDuration(task.start_time, task.end_time) + '</span>' +
-                    '<span>' + (task.report_type === 'full' ? '📊完整' : '📝精简') + '</span>' +
+                    '<span>' + (task.report_type === 'full' ? '📊Full' : '📝Simple') + '</span>' +
                 '</div>' +
             '</div>' +
             resultHtml +
@@ -757,7 +759,7 @@ def render_config_page(
     // 渲染所有任务
     function renderAllTasks() {
         if (tasks.size === 0) {
-            taskList.innerHTML = '<div class="task-hint">💡 输入股票代码开始分析</div>';
+            taskList.innerHTML = '<div class="task-hint">💡 Input Stock Code to Analyse</div>';
             return;
         }
         
@@ -851,9 +853,9 @@ def render_config_page(
     // 提交分析
     window.submitAnalysis = function() {
         const code = codeInput.value.trim();
-        const isAStock = /^\d{6}$/.test(code);
-        const isHKStock = /^HK\d{5}$/.test(code);
-        const isUSStock = /^[A-Z]{1,5}(\.[A-Z]{1,2})?$/.test(code);
+        const isAStock = /^\\d{6}$/.test(code);
+        const isHKStock = /^HK\\d{5}$/.test(code);
+        const isUSStock = /^[A-Z]{1,5}(\\.[A-Z]{1,2})?$/.test(code);
 
         if (!(isAStock || isHKStock || isUSStock)) {
             return;
@@ -902,7 +904,59 @@ def render_config_page(
             })
             .finally(() => {
                 submitBtn.disabled = false;
-                submitBtn.textContent = '🚀 分析';
+                submitBtn.textContent = '🚀 Analyze';
+                updateButtonState();
+            });
+    };
+    
+    
+    // 提交分析
+    window.submitLogs = function() {
+        
+        logsBtn.disabled = true;
+        logsBtn.textContent = '提交中...';
+
+        const reportType = reportTypeSelect.value;
+        fetch('/analysis?code=' + encodeURIComponent(code) + '&report_type=' + encodeURIComponent(reportType))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const taskId = data.task_id;
+                    tasks.set(taskId, {
+                        task: {
+                            code: code,
+                            status: 'running',
+                            start_time: new Date().toISOString(),
+                            report_type: reportType
+                        },
+                        pollCount: 0
+                    });
+                    
+                    renderAllTasks();
+                    startPolling();
+                    codeInput.value = '';
+                    
+                    // 立即轮询一次
+                    setTimeout(() => {
+                        fetch('/task?id=' + encodeURIComponent(taskId))
+                            .then(r => r.json())
+                            .then(d => {
+                                if (d.success && d.task) {
+                                    tasks.get(taskId).task = d.task;
+                                    renderAllTasks();
+                                }
+                            });
+                    }, 500);
+                } else {
+                    alert('提交失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(error => {
+                alert('请求失败: ' + error.message);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Analyze';
                 updateButtonState();
             });
     };
@@ -916,25 +970,30 @@ def render_config_page(
     
     content = f"""
   <div class="container">
-    <h2>📈 A股/港股/美股分析</h2>
+    <h2>📈 Stock Analyzer</h2>
     
     <!-- 快速分析区域 -->
     <div class="analysis-section" style="margin-top: 0; padding-top: 0; border-top: none;">
       <div class="form-group" style="margin-bottom: 0.75rem;">
-        <div class="input-group">
+        <div class="input-group" style="margin-bottom: 0.75rem;">
           <input 
               type="text" 
               id="analysis_code" 
-              placeholder="A股 600519 / 港股 HK00700 / 美股 AAPL"
+              placeholder="600519 / hk00700 / AAPL"
               maxlength="8"
               autocomplete="off"
           />
-          <select id="report_type" class="report-select" title="选择报告类型">
-            <option value="simple">📝 精简报告</option>
-            <option value="full">📊 完整报告</option>
+        </div>
+        <div class="input-group">
+          <select id="report_type" class="report-select" title="choose report type">
+            <option value="simple">📝 Simple</option>
+            <option value="full">📊 Full</option>
           </select>
           <button type="button" id="analysis_btn" class="btn-analysis" onclick="submitAnalysis()" disabled>
-            🚀 分析
+            🚀 Analyse
+          </button>
+          <button type="button" id="logs_btn" class="btn-analysis" onclick="submitLogs()">
+            📔 Logs
           </button>
         </div>
       </div>
@@ -948,16 +1007,16 @@ def render_config_page(
     <!-- 自选股配置区域 -->
     <form method="post" action="/update">
       <div class="form-group">
-        <label for="stock_list">📋 自选股列表 <span class="code-badge">{html.escape(env_filename)}</span></label>
-        <p>仅用于本地环境 (127.0.0.1) • 安全修改 .env 配置</p>
+        <label for="stock_list">📋 WatchList <span class="code-badge">{html.escape(env_filename)}</span></label>
+        <p>Only for local (127.0.0.1) • Update your watchlist in .env file</p>
         <textarea 
             id="stock_list" 
             name="stock_list" 
             rows="4" 
-            placeholder="例如: 600519, 000001 (逗号或换行分隔)"
+            placeholder="ex: 600519, 000001"
         >{safe_value}</textarea>
       </div>
-      <button type="submit">💾 保存</button>
+      <button type="submit">💾 Store</button>
     </form>
     
     <div class="footer">
@@ -970,11 +1029,42 @@ def render_config_page(
 """
     
     page = render_base(
-        title="A/H股自选配置 | WebUI",
+        title="Stock Analyzer | WebUI",
         content=content
     )
     return page.encode("utf-8")
 
+
+def render_log_page(
+    message: str,
+    details: Optional[str] = None
+) -> bytes:
+    """
+    渲染错误页面
+    
+    Args:
+        message: 错误消息
+        details: 详细信息
+    """
+    # details_html = f"<p class='text-muted'>{html.escape(details)}</p>" if details else ""
+    details_html = f"<p class='text-muted'>{details}</p>" if details else ""
+    """replace n with <br>"""
+    details_html = re.sub(r'[\n\r]+', '<br />', details_html)
+    # details_html = details_html.replace("\n", "<br />")
+
+    content = f"""
+  <div class="container" style="text-align: center; max-width: 100%;">
+    <p>{html.escape(message)}</p>
+    {details_html}
+    <a href="/" style="color: var(--primary); text-decoration: none;">← 返回首页</a>
+  </div>
+"""
+    
+    page = render_base(
+        title=message,
+        content=content
+    )
+    return page.encode("utf-8")
 
 def render_error_page(
     status_code: int,
@@ -983,14 +1073,14 @@ def render_error_page(
 ) -> bytes:
     """
     渲染错误页面
-    
+
     Args:
         status_code: HTTP 状态码
         message: 错误消息
         details: 详细信息
     """
     details_html = f"<p class='text-muted'>{html.escape(details)}</p>" if details else ""
-    
+
     content = f"""
   <div class="container" style="text-align: center;">
     <h2>😵 {status_code}</h2>
@@ -999,7 +1089,7 @@ def render_error_page(
     <a href="/" style="color: var(--primary); text-decoration: none;">← 返回首页</a>
   </div>
 """
-    
+
     page = render_base(
         title=f"错误 {status_code}",
         content=content

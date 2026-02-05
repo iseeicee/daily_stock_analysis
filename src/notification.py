@@ -2474,7 +2474,14 @@ class NotificationService:
                 "body": content[:4000],  # Bark 限制
                 "group": "stock"
             }
-        
+
+        if 'push.crorc.top' in url_lower:
+            return {
+                "title": "股票分析报告",
+                "body": content[:4000],  # Bark 限制
+                "group": "stock"
+            }
+
         # 通用格式（兼容大多数服务）
         return {
             "text": content,
