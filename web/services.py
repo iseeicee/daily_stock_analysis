@@ -145,7 +145,7 @@ class ConfigService:
 
             """read log file and get last 100 lines"""
             with open(latest_file, "r", encoding="utf-8") as f:
-                lines = f.readlines()[-100:]
+                lines = f.readlines()[-150:]
                 # log_content = "".join(lines)
                 logger.info(f"[AnalysisService] end to read log file: {str(latest_file)}")
             return str(lines)

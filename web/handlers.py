@@ -121,23 +121,7 @@ class PageHandler:
         return HtmlResponse(body)
 
     def handle_logs(self, query: Dict[str, list]) -> Response:
-        """
-        触发日志分析 GET /logs
-
-        Args:
-            query: URL 查询参数
-
-        返回:
-            {
-                "success": true,
-                "message": "分析任务已提交",
-                "code": "600519",
-                "task_id": "600519_20260119_103000"
-            }
-        """
-        # 获取股票代码参数
-        code_list = query.get("code", [])
-        # 提交异步分析任务
+        """触发日志分析 GET /logs"""
         log_content = self.config_service.get_log_content()
         body = render_log_page("logs", log_content)
         return HtmlResponse(body)

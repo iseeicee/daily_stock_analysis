@@ -13,7 +13,6 @@ Web 模板层 - HTML 页面生成
 from __future__ import annotations
 
 import html
-import re
 from typing import Optional
 
 
@@ -1047,10 +1046,8 @@ def render_log_page(
         details: 详细信息
     """
     # details_html = f"<p class='text-muted'>{html.escape(details)}</p>" if details else ""
+    details = details.replace("n'", "'<br />")
     details_html = f"<p class='text-muted'>{details}</p>" if details else ""
-    """replace n with <br>"""
-    details_html = re.sub(r'[\n\r]+', '<br />', details_html)
-    # details_html = details_html.replace("\n", "<br />")
 
     content = f"""
   <div class="container" style="text-align: center; max-width: 100%;">
