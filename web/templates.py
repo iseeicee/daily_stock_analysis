@@ -908,58 +908,6 @@ def render_config_page(
             });
     };
     
-    
-    // 提交分析
-    window.submitLogs = function() {
-        
-        logsBtn.disabled = true;
-        logsBtn.textContent = '提交中...';
-
-        const reportType = reportTypeSelect.value;
-        fetch('/analysis?code=' + encodeURIComponent(code) + '&report_type=' + encodeURIComponent(reportType))
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const taskId = data.task_id;
-                    tasks.set(taskId, {
-                        task: {
-                            code: code,
-                            status: 'running',
-                            start_time: new Date().toISOString(),
-                            report_type: reportType
-                        },
-                        pollCount: 0
-                    });
-                    
-                    renderAllTasks();
-                    startPolling();
-                    codeInput.value = '';
-                    
-                    // 立即轮询一次
-                    setTimeout(() => {
-                        fetch('/task?id=' + encodeURIComponent(taskId))
-                            .then(r => r.json())
-                            .then(d => {
-                                if (d.success && d.task) {
-                                    tasks.get(taskId).task = d.task;
-                                    renderAllTasks();
-                                }
-                            });
-                    }, 500);
-                } else {
-                    alert('提交失败: ' + (data.error || '未知错误'));
-                }
-            })
-            .catch(error => {
-                alert('请求失败: ' + error.message);
-            })
-            .finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '🚀 Analyze';
-                updateButtonState();
-            });
-    };
-    
     // 初始化
     updateButtonState();
     renderAllTasks();
@@ -991,9 +939,11 @@ def render_config_page(
           <button type="button" id="analysis_btn" class="btn-analysis" onclick="submitAnalysis()" disabled>
             🚀 Analyse
           </button>
-          <button type="button" id="logs_btn" class="btn-analysis" onclick="submitLogs()">
-            📔 Logs
-          </button>
+          <a href="/logs" target="_blank">
+              <button type="button" id="logs_btn" class="btn-analysis">
+                📔 Logs
+              </button>
+          </a>
         </div>
       </div>
       
@@ -1040,23 +990,23 @@ def render_log_page(
 ) -> bytes:
     """
     渲染错误页面
-    
+
     Args:
         message: 错误消息
         details: 详细信息
     """
     # details_html = f"<p class='text-muted'>{html.escape(details)}</p>" if details else ""
-    details = details.replace("n'", "'<br />")
+    details = details.replace("n', ", "'<br />")
     details_html = f"<p class='text-muted'>{details}</p>" if details else ""
 
     content = f"""
-  <div class="container" style="text-align: center; max-width: 100%;">
+  <div class="container" style="max-width: 100%;">
     <p>{html.escape(message)}</p>
     {details_html}
     <a href="/" style="color: var(--primary); text-decoration: none;">← 返回首页</a>
   </div>
 """
-    
+
     page = render_base(
         title=message,
         content=content
