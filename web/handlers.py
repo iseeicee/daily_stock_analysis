@@ -122,7 +122,16 @@ class PageHandler:
 
     def handle_logs(self, query: Dict[str, list]) -> Response:
         """触发日志分析 GET /logs"""
-        log_content = self.config_service.get_log_content()
+        try:
+            limit = int(query.get("limit", ["150"])[0])
+        except ValueError:
+            limit = 150
+        if limit <= 0 or limit > 1000:
+            limit = 1000
+
+        log_content = self.config_service.get_log_content(
+            limit=limit
+        )
         body = render_log_page("logs", log_content)
         return HtmlResponse(body)
 

@@ -634,7 +634,6 @@ def render_config_page(
 (function() {
     const codeInput = document.getElementById('analysis_code');
     const submitBtn = document.getElementById('analysis_btn');
-    const logsBtn = document.getElementById('logs_btn');
     const taskList = document.getElementById('task_list');
     const reportTypeSelect = document.getElementById('report_type');
     
@@ -939,7 +938,7 @@ def render_config_page(
           <button type="button" id="analysis_btn" class="btn-analysis" onclick="submitAnalysis()" disabled>
             🚀 Analyse
           </button>
-          <a href="/logs" target="_blank">
+          <a href="/logs?limit=150" target="_blank">
               <button type="button" id="logs_btn" class="btn-analysis">
                 📔 Logs
               </button>

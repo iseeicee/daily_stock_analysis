@@ -131,7 +131,7 @@ class ConfigService:
         out = "\n".join(out_lines)
         return out + ("\n" if trailing_newline else "")
 
-    def get_log_content(self) -> str:
+    def get_log_content(self, limit: int) -> str:
         """获取当前自选股列表字符串"""
         env_text = self.read_env_text()
         log_dir = self._extract_log_dir(env_text)
@@ -145,7 +145,7 @@ class ConfigService:
 
             """read log file and get last 100 lines"""
             with open(latest_file, "r", encoding="utf-8") as f:
-                lines = f.readlines()[-150:]
+                lines = f.readlines()[-limit:]
                 # log_content = "".join(lines)
                 logger.info(f"[AnalysisService] end to read log file: {str(latest_file)}")
             return str(lines)
