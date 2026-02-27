@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import BacktestPage from './pages/BacktestPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
+import LogsPage from './pages/LogsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ChatPage from './pages/ChatPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -46,6 +47,17 @@ const LogoutIcon: React.FC = () => (
     </svg>
 );
 
+const LogsIcon: React.FC<{ active?: boolean }> = ({ active }) => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={active ? 2 : 1.5}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+    </svg>
+);
+
 type DockItem = {
     key: string;
     label: string;
@@ -77,6 +89,12 @@ const NAV_ITEMS: DockItem[] = [
         label: '设置',
         to: '/settings',
         icon: SettingsIcon,
+    },
+    {
+        key: 'logs',
+        label: '日志',
+        to: '/logs',
+        icon: LogsIcon,
     },
 ];
 
@@ -177,6 +195,7 @@ const AppContent: React.FC = () => {
                     <Route path="/chat" element={<ChatPage/>}/>
                     <Route path="/backtest" element={<BacktestPage/>}/>
                     <Route path="/settings" element={<SettingsPage/>}/>
+                    <Route path="/logs" element={<LogsPage/>}/>
                     <Route path="/login" element={<LoginPage/>}/>
                     <Route path="*" element={<NotFoundPage/>}/>
                 </Routes>
