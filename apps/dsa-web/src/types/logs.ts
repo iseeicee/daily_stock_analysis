@@ -34,7 +34,7 @@ export interface LogDetail {
 }
 
 export interface LogDetailResponse {
-  file_name: string;
+  fileName: string;
   content: Array<LogDetail>[];
   pointer: number;
   pages: number;

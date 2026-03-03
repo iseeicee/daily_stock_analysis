@@ -18,16 +18,9 @@ from api.deps import get_database_manager
 from api.v1.schemas.logs import (
     LogsListResponse,
     LogItem,
-    NewsIntelItem,
-    NewsIntelResponse,
     LogDetail,
-    ReportMeta,
-    ReportSummary,
-    ReportStrategy,
-    ReportDetails,
 )
 from api.v1.schemas.common import ErrorResponse
-from src.storage import DatabaseManager
 from src.services.logs_service import LogsService
 
 logger = logging.getLogger(__name__)

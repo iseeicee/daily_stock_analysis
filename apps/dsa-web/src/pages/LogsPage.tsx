@@ -2,70 +2,17 @@
 import type React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { logsApi } from '../api/logs';
-import { Card, Badge, Pagination } from '../components/common';
+import { Pagination } from '../components/common';
 import type {
-  LogsResponse,
-  LogDetail,
   LogInfo,
+  LogDetailResponse,
 } from '../types/logs';
-
-// ============ Helpers ============
-
-function pct(value?: number | null): string {
-  if (value == null) return '--';
-  return `${value.toFixed(1)}%`;
-}
-
-function outcomeBadge(outcome?: string) {
-  if (!outcome) return <Badge variant="default">--</Badge>;
-  switch (outcome) {
-    case 'win':
-      return <Badge variant="success" glow>WIN</Badge>;
-    case 'loss':
-      return <Badge variant="danger" glow>LOSS</Badge>;
-    case 'neutral':
-      return <Badge variant="warning">NEUTRAL</Badge>;
-    default:
-      return <Badge variant="default">{outcome}</Badge>;
-  }
-}
-
-function statusBadge(status: string) {
-  switch (status) {
-    case 'completed':
-      return <Badge variant="success">completed</Badge>;
-    case 'insufficient':
-      return <Badge variant="warning">insufficient</Badge>;
-    case 'error':
-      return <Badge variant="danger">error</Badge>;
-    default:
-      return <Badge variant="default">{status}</Badge>;
-  }
-}
-
-function boolIcon(value?: boolean | null) {
-  if (value === true) return <span className="text-emerald-400">&#10003;</span>;
-  if (value === false) return <span className="text-red-400">&#10007;</span>;
-  return <span className="text-muted">--</span>;
-}
-
-// ============ Metric Row ============
-
-const MetricRow: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
-  <div className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-    <span className="text-xs text-secondary">{label}</span>
-    <span className={`text-sm font-mono font-semibold ${accent ? 'text-cyan' : 'text-white'}`}>{value}</span>
-  </div>
-);
 
 
 // ============ Main Page ============
 
 const LogsPage: React.FC = () => {
   // Input state
-  const [codeFilter, setCodeFilter] = useState('');
-  const [evalDays, setEvalDays] = useState('');
-  const [forceRerun, setForceRerun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [logDetail, setLogDetailResult] = useState<LogDetailResponse | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
@@ -104,10 +51,8 @@ const LogsPage: React.FC = () => {
   const getLogDetail = async (fileName: string) => {
     try {
       fileName = fileName.trim();
-      const response = await logsApi.getLogDetail({
-        fileName
-      });
-      setLogDetailResult(response.content?response:null);
+      const response = await logsApi.getLogDetail(fileName);
+      setLogDetailResult(response?response:null);
     } catch (err) {
       setRunError(err instanceof Error ? err.message : 'Fetch log detail failed');
     } finally {
@@ -115,24 +60,10 @@ const LogsPage: React.FC = () => {
     }
   };
 
-  // Filter by code
-  const handleFilter = () => {
-    const code = codeFilter.trim() || undefined;
-    setCurrentPage(1);
-    fetchResults(1, code);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleFilter();
-    }
-  };
-
   // Pagination
   const totalPages = Math.ceil(totalResults / pageSize);
   const handlePageChange = (page: number) => {
-    const windowDays = evalDays ? parseInt(evalDays, 10) : undefined;
-    fetchResults(page, codeFilter.trim() || undefined);
+    fetchResults(page);
   };
 
   // ============ Log Detail ============
@@ -181,7 +112,7 @@ const LogsPage: React.FC = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-elevated text-left">
-                      <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileDate</th>
+                      {/* <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileDate</th> */}
                       <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileName</th>
                       <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileSize</th>
                     </tr>
@@ -192,7 +123,7 @@ const LogsPage: React.FC = () => {
                         key={item.fileName}
                         className="border-t border-white/5 hover:bg-hover transition-colors"
                       >
-                        <td className="px-3 py-2 font-mono text-cyan text-xs">{item.createdAt}</td>
+                        {/* <td className="px-3 py-2 font-mono text-cyan text-xs">{item.createdAt}</td> */}
                         <td className="px-3 py-2" onClick={() => getLogDetail(item.fileName)}>{item.fileName}</td>
                         <td className="px-3 py-2">{item.fileSize}</td>
                       </tr>

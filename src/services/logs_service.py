@@ -119,8 +119,11 @@ class LogsService:
 
             # items sort by created_at desc
             items.sort(key=lambda x: x["created_at"], reverse=True)
+            # return sublist of items, start from (page-1)*limit, end to page*limit
+            total = items.__len__()
+            items = items[(page - 1) * limit:page * limit]
             return {
-                "total": items.count(self),
+                "total": total,
                 "items": items,
             }
             
@@ -136,7 +139,7 @@ class LogsService:
             file_name: 分析记录唯一标识
             
         Returns:
-            完整的分析报告字典，不存在返回 None
+            明细，不存在返回 None
         """
         try:
             payload = self.system_config_service.get_config(include_schema=True)

@@ -1,33 +1,13 @@
 import apiClient from './index';
 import { toCamelCase } from './utils';
 import type {
-  BacktestRunRequest,
-  LogDetail, LogDetailResponse,
+  LogDetailResponse,
   LogsResponse,
-  PerformanceMetrics,
 } from '../types/logs';
 
 // ============ API ============
 
 export const logsApi = {
-  /**
-   * Trigger backtest evaluation
-   */
-  run: async (params: BacktestRunRequest = {}): Promise<LogDetail> => {
-    const requestData: Record<string, unknown> = {};
-    if (params.code) requestData.code = params.code;
-    if (params.force) requestData.force = params.force;
-    if (params.fileName) requestData.eval_window_days = params.fileName;
-    if (params.minAgeDays != null) requestData.min_age_days = params.minAgeDays;
-    if (params.limit) requestData.limit = params.limit;
-
-    const response = await apiClient.post<Record<string, unknown>>(
-      '/api/v1/backtest/run',
-      requestData,
-    );
-    return toCamelCase<LogDetail>(response.data);
-  },
-
   /**
    * Get paginated backtest results
    */
@@ -56,13 +36,13 @@ export const logsApi = {
   },
 
   /**
-   * Get overall performance metrics
+   * Get log detail
    */
   getLogDetail: async (fileName?: string): Promise<LogDetailResponse | null> => {
     try {
       if (!fileName) return null;
       const response = await apiClient.get<Record<string, unknown>>(
-        '/api/v1/logs/' + fileName.fileName,
+        '/api/v1/logs/' + fileName,
       );
       return toCamelCase<LogDetailResponse>(response.data);
     } catch (err: unknown) {
