@@ -38,11 +38,15 @@ export const logsApi = {
   /**
    * Get log detail
    */
-  getLogDetail: async (fileName?: string): Promise<LogDetailResponse | null> => {
+  getLogDetail: async (fileName?: string, pointer?: number): Promise<LogDetailResponse | null> => {
     try {
       if (!fileName) return null;
+      const queryParams = {
+        pointer: pointer || 0,
+      }
       const response = await apiClient.get<Record<string, unknown>>(
         '/api/v1/logs/' + fileName,
+        { params: queryParams },
       );
       return toCamelCase<LogDetailResponse>(response.data);
     } catch (err: unknown) {

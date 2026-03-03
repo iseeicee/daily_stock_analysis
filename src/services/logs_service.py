@@ -147,27 +147,46 @@ class LogsService:
             log_dir = items["LOG_DIR"]["value"]
             log_path = Path(log_dir)
 
-            limit = 1000
+            limit = 100
 
             """read log file and get last 1000 lines"""
             records = []
             file_path = log_path / file_name
-            # 获取file_path文件的总行数
-            total_lines = get_total_lines(str(file_path))
-            pages = (total_lines + limit - 1) // limit
-            with open(file_path, "r", encoding="utf-8") as f:
-                records = f.readlines()[-limit:]
-                # log_content = "".join(lines)
-            # log_content = str(records)
+
+            if not file_path.exists() or pointer < 0:
+                return None
+
+            # 获取总行数计算总页数
+            file_path = str(file_path)
+            total_lines = get_total_lines(file_path)
+            # pages = (total_lines + limit - 1) // limit if total_lines > 0 else 1
             
+            # 使用 helper 函数获取指定页的内容
+            # records = get_last_lines(str(file_path), limit, pointer)
+            
+            isBigFile = is_big_file(file_path)
+            if isBigFile:
+                rrb = list(read_reverse_bigfile(file_path))
+                with open(file_path, encoding='utf-8') as f:
+                    orl = f.readlines()
+                print(len(orl))
+            else:
+                records = read_reverse(file_path, limit, pointer)
+                if pointer == 0:
+                    pointer = total_lines - limit
+                else:
+                    pointer = pointer - limit
+
             if not records:
                 return None
             
+            # 反转记录以保持时间倒序
+            records.reverse()
+
             return {
                 "file_name": file_name,
                 "content": records,
                 "pointer": pointer,
-                "pages": pages,
             }
             
         except Exception as e:
@@ -192,3 +211,106 @@ def get_total_lines(file_path: str) -> int:
         logger.error(f"读取文件行数失败: {e}", exc_info=True)
         return 0
 
+def is_big_file(file_path: str) -> bool:
+    """
+    判断文件是否大于 100M
+    
+    Args:
+        file_path: 文件路径
+        
+    Returns:
+        True: 文件大于 100M
+        False: 文件小于 100M
+    """
+    try:
+        file_size = os.path.getsize(file_path)
+        return file_size > 100 * 1024 * 1024
+    except Exception as e:
+        logger.error(f"判断文件大小失败: {e}", exc_info=True)
+
+def read_reverse(file_path: str, limit: int, pointer: int) -> List[str]:
+    """
+    获取文件末尾指定页的行内容
+    
+    Args:
+        file_path: 文件路径
+        limit: 每页行数
+        pointer: 起始位置
+        
+    Returns:
+        行内容列表
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            all_lines = f.readlines()
+            
+        total = len(all_lines)
+        if total == 0:
+            return []
+
+        if pointer == 0:
+            pointer = total
+        
+        # 计算切片索引
+        start_idx = pointer - limit
+        end_idx = pointer
+        
+        # 边界处理
+        if start_idx < 0:
+            start_idx = 0
+        if end_idx > total:
+            end_idx = total
+            
+        if start_idx >= end_idx:
+            return []
+            
+        return all_lines[start_idx:end_idx]
+        
+    except Exception as e:
+        logger.error(f"读取文件片段失败：{e}", exc_info=True)
+        return []
+
+def read_reverse_bigfile(filepath, encoding='utf-8', separator=b'\n', single_size=1024 * 1024):
+    """
+    :param filepath: 文件路径
+    :param encoding: 字符编码，默认utf-8
+    :param separator: 行尾分隔符，默认 '\n'
+    :param single_size: 单次读取 字符量，默认 1024*1024
+    :return: generator 
+    """
+    with open(filepath, 'rb') as f:
+        try:
+            f.seek(0, 2)
+            position = f.tell()
+            if position > single_size:
+                f.seek(-single_size, 2)
+            else:
+                f.seek(0, 0)
+        except OSError as e:
+            return 'Blank file'
+        line = b''
+        while 1:
+            chunk = f.read(single_size)
+            index_list = [match.end() for match in re.finditer(separator, chunk)]
+            index = None
+            while index_list:
+                target = index_list.pop()
+                if index is None:
+                    line = chunk[target:] + line
+                else:
+                    line = chunk[target:index] + line
+                if line:
+                    yield line.decode(encoding=encoding)
+                line = b''
+                index = target
+            else:
+                line = chunk[:index] + line
+            position = f.tell()
+            if position > 2 * single_size and single_size > 0:
+                f.seek(-2 * single_size, 1)
+            else:
+                f.seek(0, 0)
+                single_size = position - single_size
+                if single_size <= 0:
+                    yield line.decode(encoding=encoding)
+                    return 'End'

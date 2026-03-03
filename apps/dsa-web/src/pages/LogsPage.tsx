@@ -21,6 +21,7 @@ const LogsPage: React.FC = () => {
   const [results, setResults] = useState<LogInfo[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pointer, setPointer] = useState(0);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const pageSize = 20;
 
@@ -51,8 +52,9 @@ const LogsPage: React.FC = () => {
   const getLogDetail = async (fileName: string) => {
     try {
       fileName = fileName.trim();
-      const response = await logsApi.getLogDetail(fileName);
+      const response = await logsApi.getLogDetail(fileName, pointer);
       setLogDetailResult(response?response:null);
+      setPointer(response?response.pointer:0);
     } catch (err) {
       setRunError(err instanceof Error ? err.message : 'Fetch log detail failed');
     } finally {
@@ -68,14 +70,19 @@ const LogsPage: React.FC = () => {
 
   // ============ Log Detail ============
   const LogDetail: React.FC<{ data: LogDetailResponse }> = ({ data }) => (
-    <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-elevated border border-white/5 text-xs font-mono animate-fade-in">
+    <div className="items-center gap-4 px-3 py-2 rounded-lg bg-elevated border border-white/5 text-xs font-mono animate-fade-in">
       <span className="text-secondary">FileName: <span className="text-white">{data.fileName}</span></span>
-      <span className="text-secondary">Pages: <span className="text-cyan">{data.pages}</span></span>
-      <span className="text-secondary">Pointer: <span className="text-cyan">{data.pointer}</span></span>
-      <span className="log-content">{data.content.map((line, index) => (
-          <p className="text-white">{line}</p>
+      <span className="text-secondary pl-3">Pointer: <span className="text-cyan">{data.pointer}</span></span>
+      <div className="log-content">{data.content.map((line, index) => (
+          <p className="text-white log-item">{line}</p>
       ))}
-      </span>
+        {/* <span className="text-secondary"><a onClick={() => getLogDetail(data.fileName)}>Load More</a></span> */}
+      </div>
+      <div>
+        {pointer > 0 && (
+          <span className="text-cyan log-item"><a onClick={() => getLogDetail(data.fileName)}>Load More</a></span>
+        )}
+      </div>
       {data.errors > 0 && (
         <span className="text-secondary">Errors: <span className="text-red-400">{data.errors}</span></span>
       )}

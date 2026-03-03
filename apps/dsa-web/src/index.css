@@ -738,8 +738,16 @@ body {
   }
 }
 
+.log-item {
+  cursor: pointer;
+}
+
 .log-content {
     position: relative;
-    max-height: 1200px;
+    max-height: 850px;
     overflow-y: auto;
+}
+
+.pl-3 {
+  padding-left: 3px;
 }

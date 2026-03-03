@@ -113,7 +113,7 @@ def get_history_list(
 )
 def get_log_detail(
     file_name: str,
-    pointer: Optional[int] = Query(None, description="开始行数")
+    pointer: int = Query(0, ge=0, description="起始行数"),
 ) -> LogDetail:
     """
     获取历史文件详情
@@ -152,7 +152,6 @@ def get_log_detail(
             file_name=result.get("file_name", ""),
             content=result.get("content", ""),
             pointer=result.get("pointer"),
-            pages=result.get("pages"),
         )
         
     except HTTPException:
