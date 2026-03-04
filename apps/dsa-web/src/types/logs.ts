@@ -28,14 +28,9 @@ export interface LogsResponse {
   items: LogInfo[];
 }
 
-export interface LogDetail {
-  lineId: number;
-  content: string;
-}
-
 export interface LogDetailResponse {
   fileName: string;
-  content: LogDetail[];
+  content: string[];
   pointer: number;
   pages: number;
 }

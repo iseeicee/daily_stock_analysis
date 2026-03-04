@@ -49,11 +49,11 @@ const LogsPage: React.FC = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Search
-  const getLogDetail = async (fileName: string) => {
+  const getLogDetail = async (fileName: string, init?: boolean) => {
     try {
       setIsRunning(true);
       fileName = fileName.trim();
-      const response = await logsApi.getLogDetail(fileName, pointer);
+      const response = await logsApi.getLogDetail(fileName, init?0:pointer);
       setLogDetailResult(response?response:null);
       setPointer(response?response.pointer:0);
     } catch (err) {
@@ -73,15 +73,15 @@ const LogsPage: React.FC = () => {
   const LogDetail: React.FC<{ data: LogDetailResponse }> = ({ data }) => (
     <div className="items-center gap-4 px-3 py-2 rounded-lg bg-elevated border border-white/5 text-xs font-mono animate-fade-in">
       <span className="text-secondary">FileName: <span className="text-white">{data.fileName}</span></span>
-      <span className="text-secondary pl-3">Pointer: <span className="text-cyan">{data.pointer}</span></span>
-      <div className="log-content">{data.content.map((logDetail) => (
-          <p className="text-white log-item">{logDetail.content}</p>
+      {/* <span className="text-secondary pl-3">Pointer: <span className="text-cyan">{data.pointer}</span></span> */}
+      <div className="log-content">{data.content.map((line) => (
+          <p className="text-white">{line}</p>
       ))}
         {/* <span className="text-secondary"><a onClick={() => getLogDetail(data.fileName)}>Load More</a></span> */}
       </div>
       <div>
         {pointer > 0 && (
-          <span className="text-cyan log-item"><button onClick={() => getLogDetail(data.fileName)} disabled={isRunning}>Load More</button></span>
+          <span className="text-cyan"><button className="log-item" onClick={() => getLogDetail(data.fileName)} disabled={isRunning}>Load More</button></span>
         )}
       </div>
       {runError && (
@@ -132,7 +132,7 @@ const LogsPage: React.FC = () => {
                         className="border-t border-white/5 hover:bg-hover transition-colors"
                       >
                         {/* <td className="px-3 py-2 font-mono text-cyan text-xs">{item.createdAt}</td> */}
-                        <td className="px-3 py-2" onClick={() => getLogDetail(item.fileName)}>{item.fileName}</td>
+                        <td className="px-3 py-2" onClick={() => getLogDetail(item.fileName, true)}>{item.fileName}</td>
                         <td className="px-3 py-2">{item.fileSize}</td>
                       </tr>
                     ))}
