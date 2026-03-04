@@ -27,6 +27,7 @@ class CustomWebhookSender:
         """
         self._custom_webhook_urls = getattr(config, 'custom_webhook_urls', []) or []
         self._custom_webhook_bearer_token = getattr(config, 'custom_webhook_bearer_token', None)
+        self._custom_webhook_bark_domain = getattr(config, 'custom_webhook_bark_domain', None)
         self._webhook_verify_ssl = getattr(config, 'webhook_verify_ssl', True)
  
     def send_to_custom(self, content: str) -> bool:
@@ -181,7 +182,7 @@ class CustomWebhookSender:
             }
         
         # Bark (iOS 推送)
-        if 'api.day.app' in url_lower:
+        if 'api.day.app' in url_lower or self._custom_webhook_bark_domain:
             return {
                 "title": "股票分析报告",
                 "body": content[:4000],  # Bark 限制
