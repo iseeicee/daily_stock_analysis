@@ -26,13 +26,7 @@ export const logsApi = {
       { params: queryParams },
     );
 
-    const data = toCamelCase<LogsResponse>(response.data);
-    return {
-      total: data.total,
-      page: data.page,
-      limit: data.limit,
-      items: (data.items || []),
-    };
+    return toCamelCase<LogsResponse>(response.data);
   },
 
   /**

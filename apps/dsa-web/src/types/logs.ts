@@ -25,7 +25,7 @@ export interface LogsResponse {
   total: number;
   page: number;
   limit: number;
-  items: Array<LogInfo>[];
+  items: LogInfo[];
 }
 
 export interface LogDetail {
@@ -35,7 +35,7 @@ export interface LogDetail {
 
 export interface LogDetailResponse {
   fileName: string;
-  content: Array<LogDetail>[];
+  content: LogDetail[];
   pointer: number;
   pages: number;
 }

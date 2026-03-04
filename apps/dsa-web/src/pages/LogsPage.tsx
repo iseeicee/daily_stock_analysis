@@ -34,7 +34,7 @@ const LogsPage: React.FC = () => {
       setTotalResults(response.total);
       setCurrentPage(response.page);
     } catch (err) {
-      console.error('Failed to fetch backtest results:', err);
+      console.error('Failed to fetch log list:', err);
     } finally {
       setIsLoadingResults(false);
     }
@@ -51,6 +51,7 @@ const LogsPage: React.FC = () => {
   // Search
   const getLogDetail = async (fileName: string) => {
     try {
+      setIsRunning(true);
       fileName = fileName.trim();
       const response = await logsApi.getLogDetail(fileName, pointer);
       setLogDetailResult(response?response:null);
@@ -73,18 +74,18 @@ const LogsPage: React.FC = () => {
     <div className="items-center gap-4 px-3 py-2 rounded-lg bg-elevated border border-white/5 text-xs font-mono animate-fade-in">
       <span className="text-secondary">FileName: <span className="text-white">{data.fileName}</span></span>
       <span className="text-secondary pl-3">Pointer: <span className="text-cyan">{data.pointer}</span></span>
-      <div className="log-content">{data.content.map((line, index) => (
-          <p className="text-white log-item">{line}</p>
+      <div className="log-content">{data.content.map((logDetail) => (
+          <p className="text-white log-item">{logDetail.content}</p>
       ))}
         {/* <span className="text-secondary"><a onClick={() => getLogDetail(data.fileName)}>Load More</a></span> */}
       </div>
       <div>
         {pointer > 0 && (
-          <span className="text-cyan log-item"><a onClick={() => getLogDetail(data.fileName)}>Load More</a></span>
+          <span className="text-cyan log-item"><button onClick={() => getLogDetail(data.fileName)} disabled={isRunning}>Load More</button></span>
         )}
       </div>
-      {data.errors > 0 && (
-        <span className="text-secondary">Errors: <span className="text-red-400">{data.errors}</span></span>
+      {runError && (
+        <span className="text-secondary">Errors: <span className="text-red-400">{runError}</span></span>
       )}
     </div>
   );
@@ -125,7 +126,7 @@ const LogsPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((item, index) => (
+                    {results.map((item) => (
                       <tr
                         key={item.fileName}
                         className="border-t border-white/5 hover:bg-hover transition-colors"
