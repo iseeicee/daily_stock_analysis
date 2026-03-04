@@ -23,7 +23,7 @@ const LogsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pointer, setPointer] = useState(0);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
-  const pageSize = 20;
+  const pageSize = 13;
 
   // Fetch results
   const fetchResults = useCallback(async (page = 1, code?: string) => {
@@ -72,7 +72,7 @@ const LogsPage: React.FC = () => {
   // ============ Log Detail ============
   const LogDetail: React.FC<{ data: LogDetailResponse }> = ({ data }) => (
     <div className="items-center gap-4 px-3 py-2 rounded-lg bg-elevated border border-white/5 text-xs font-mono animate-fade-in">
-      <span className="text-secondary">FileName: <span className="text-white">{data.fileName}</span></span>
+      <span className="text-secondary">File Name: <span className="text-cyan">{data.fileName}</span></span>
       {/* <span className="text-secondary pl-3">Pointer: <span className="text-cyan">{data.pointer}</span></span> */}
       <div className="log-content">{data.content.map((line) => (
           <p className="text-white">{line}</p>
@@ -121,8 +121,7 @@ const LogsPage: React.FC = () => {
                   <thead>
                     <tr className="bg-elevated text-left">
                       {/* <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileDate</th> */}
-                      <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileName</th>
-                      <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">FileSize</th>
+                      <th className="px-3 py-2.5 text-xs font-medium text-secondary uppercase tracking-wider">File List</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -132,8 +131,10 @@ const LogsPage: React.FC = () => {
                         className="border-t border-white/5 hover:bg-hover transition-colors"
                       >
                         {/* <td className="px-3 py-2 font-mono text-cyan text-xs">{item.createdAt}</td> */}
-                        <td className="px-3 py-2" onClick={() => getLogDetail(item.fileName, true)}>{item.fileName}</td>
-                        <td className="px-3 py-2">{item.fileSize}</td>
+                        <td className="px-3 py-2 log-item" onClick={() => getLogDetail(item.fileName, true)}>
+                          <p>{item.createdAt} [{item.fileSize} MB]</p>
+                          <p>{item.fileName}</p>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
