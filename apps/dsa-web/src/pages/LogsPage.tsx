@@ -111,7 +111,7 @@ const LogsPage: React.FC = () => {
               </div>
               <h3 className="text-base font-medium text-white mb-1.5">No Results</h3>
               <p className="text-xs text-muted max-w-xs">
-                Run a backtest to evaluate historical analysis accuracy
+                No content to display.
               </p>
             </div>
           ) : (
@@ -158,8 +158,25 @@ const LogsPage: React.FC = () => {
         </div>
 
         {/* Right content - Results table */}
-        <section className="flex-1 overflow-y-auto">
-        {logDetail && (
+        <section className="flex-1 overflow-y-auto log-content-width">
+          {isRunning ? (
+            <div className="flex flex-col items-center justify-center h-64">
+              <div className="w-10 h-10 border-3 border-cyan/20 border-t-cyan rounded-full animate-spin" />
+              <p className="mt-3 text-secondary text-sm">Loading results...</p>
+            </div>
+          ) : !logDetail ? (
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <div className="w-12 h-12 mb-3 rounded-xl bg-elevated flex items-center justify-center">
+                <svg className="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <h3 className="text-base font-medium text-white mb-1.5">No Results</h3>
+              <p className="text-xs text-muted max-w-xs">
+                No content to display.
+              </p>
+            </div>
+          ) : (
             <LogDetail data={logDetail} />
         )}
         </section>

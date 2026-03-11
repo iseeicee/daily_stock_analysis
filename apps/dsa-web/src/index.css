@@ -745,7 +745,11 @@ body {
 .log-content {
     position: relative;
     max-height: 850px;
-    overflow-y: auto;
+    overflow: auto;
+}
+
+.log-content-width {
+  max-width: 1450px;
 }
 
 .pl-3 {
