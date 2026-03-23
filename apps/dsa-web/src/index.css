@@ -858,6 +858,24 @@ body {
   box-shadow: 0 0 20px var(--color-purple-glow);
 }
 
+/* =========================================
+   3. Log page styles
+   ========================================= */
+.log-item {
+  cursor: pointer;
+}
+
+.log-content {
+    position: relative;
+    max-height: 850px;
+    overflow: auto;
+}
+
+.log-content-width {
+  max-width: 1450px;
+}
+
+
 /* ============ Responsive ============ */
 /* =========================================
    4. NEW UI COMPONENT UTILITIES (from Terminal PR)
