@@ -53,6 +53,7 @@ const zh = {
   'layout.nav.home': '首页',
   'layout.nav.portfolio': '持仓',
   'layout.nav.settings': '设置',
+  'layout.nav.logs': '日志',
   'layout.nav.screening': '选股',
   'layout.navMenu': '导航菜单',
   'layout.newChatMessage': '问股有新消息',
