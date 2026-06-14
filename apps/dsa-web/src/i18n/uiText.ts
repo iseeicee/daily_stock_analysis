@@ -69,6 +69,8 @@ const zh = {
   'layout.route.portfolio.title': '持仓',
   'layout.route.settings.description': '系统配置、模型与认证管理',
   'layout.route.settings.title': '设置',
+  'layout.route.logs.description': '系统日志查看',
+  'layout.route.logs.title': '日志',
   'layout.route.screening.description': 'AlphaSift 策略选股与候选研究',
   'layout.route.screening.title': '选股',
   'layout.logout': '退出',

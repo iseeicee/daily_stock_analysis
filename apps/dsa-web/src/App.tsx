@@ -1,14 +1,6 @@
 import type React from 'react';
 import { lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import BacktestPage from './pages/BacktestPage';
-import SettingsPage from './pages/SettingsPage';
-import LogsPage from './pages/LogsPage';
-import LoginPage from './pages/LoginPage';
-import NotFoundPage from './pages/NotFoundPage';
-import ChatPage from './pages/ChatPage';
-import PortfolioPage from './pages/PortfolioPage';
 import { ApiErrorAlert, Shell } from './components/common';
 import {
   PageLoadingFallback,
@@ -23,6 +15,7 @@ import './App.css';
 const HomePage = lazy(() => import('./pages/HomePage'));
 const BacktestPage = lazy(() => import('./pages/BacktestPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const LogsPage = lazy(() => import('./pages/LogsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
