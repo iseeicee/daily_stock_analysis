@@ -1,7 +1,9 @@
 import type React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApiError, createParsedApiError } from '../../api/error';
+import { UiLanguageProvider } from '../../contexts/UiLanguageContext';
+import { UI_LANGUAGE_STORAGE_KEY } from '../../utils/uiLanguage';
 import PortfolioPage from '../PortfolioPage';
 
 const {
@@ -22,6 +24,8 @@ const {
   parseCsvImport,
   commitCsvImport,
   createAccount,
+  deleteAccount,
+  analyzePosition,
 } = vi.hoisted(() => ({
   getAccounts: vi.fn(),
   getSnapshot: vi.fn(),
@@ -40,6 +44,8 @@ const {
   parseCsvImport: vi.fn(),
   commitCsvImport: vi.fn(),
   createAccount: vi.fn(),
+  deleteAccount: vi.fn(),
+  analyzePosition: vi.fn(),
 }));
 
 vi.mock('../../api/portfolio', () => ({
@@ -61,6 +67,8 @@ vi.mock('../../api/portfolio', () => ({
     parseCsvImport,
     commitCsvImport,
     createAccount,
+    deleteAccount,
+    analyzePosition,
   },
 }));
 
@@ -96,7 +104,12 @@ function makeAccounts(items: AccountItem[] = [{ id: 1, name: 'Main' }]) {
   };
 }
 
-function makeSnapshot(options: { accountId?: number; fxStale?: boolean; accountCount?: number } = {}) {
+function makeSnapshot(options: {
+  accountId?: number;
+  fxStale?: boolean;
+  accountCount?: number;
+  positions?: Array<Record<string, unknown>>;
+} = {}) {
   const accountId = options.accountId ?? 1;
   return {
     asOf: '2026-03-19',
@@ -129,7 +142,7 @@ function makeSnapshot(options: { accountId?: number; fxStale?: boolean; accountC
         feeTotal: 0,
         taxTotal: 0,
         fxStale: options.fxStale ?? true,
-        positions: [],
+        positions: options.positions ?? [],
       },
     ],
   };
@@ -192,6 +205,7 @@ async function waitForInitialLoad() {
 describe('PortfolioPage FX refresh', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
 
     getAccounts.mockResolvedValue(makeAccounts());
     getSnapshot.mockImplementation(async ({ accountId }: { accountId?: number } = {}) => makeSnapshot({ accountId, fxStale: true }));
@@ -229,7 +243,24 @@ describe('PortfolioPage FX refresh', () => {
       errors: [],
     });
     createAccount.mockResolvedValue({ id: 1 });
+    deleteAccount.mockResolvedValue({ deleted: 1 });
+    analyzePosition.mockResolvedValue({
+      taskId: 'task-portfolio-1',
+      traceId: 'task-portfolio-1',
+      status: 'pending',
+      message: '分析任务已加入队列: HK00700',
+      analysisPhase: 'auto',
+    });
   });
+
+  function renderEnglishPage() {
+    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, 'en');
+    render(
+      <UiLanguageProvider>
+        <PortfolioPage />
+      </UiLanguageProvider>,
+    );
+  }
 
   it('renders stale FX status with a manual refresh button', async () => {
     render(<PortfolioPage />);
@@ -238,6 +269,20 @@ describe('PortfolioPage FX refresh', () => {
 
     expect(await screen.findByText('过期')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '刷新汇率' })).toBeInTheDocument();
+  });
+
+  it('renders portfolio risk drawdown labels in English UI mode', async () => {
+    renderEnglishPage();
+
+    await waitForInitialLoad();
+
+    expect(await screen.findByText('Portfolio management')).toBeInTheDocument();
+    expect(screen.getByText('Drawdown monitor')).toBeInTheDocument();
+    expect(screen.getByText(/Max drawdown:/)).toBeInTheDocument();
+    expect(screen.getByText(/Current drawdown:/)).toBeInTheDocument();
+    expect(screen.getByText('Stop-loss proximity warning')).toBeInTheDocument();
+    expect(screen.getByText('Scope')).toBeInTheDocument();
+    expect(screen.queryByText('回撤监控')).not.toBeInTheDocument();
   });
 
   it('refreshes FX for a single selected account and only reloads snapshot/risk', async () => {
@@ -313,6 +358,58 @@ describe('PortfolioPage FX refresh', () => {
     fireEvent.click(screen.getByRole('button', { name: '刷新汇率' }));
 
     expect(await screen.findByText('汇率在线刷新已被禁用。')).toBeInTheDocument();
+  });
+
+  it('renders backend-provided position valuation fields and stale missing-price hint', async () => {
+    getSnapshot.mockResolvedValueOnce(makeSnapshot({ fxStale: true, positions: [
+      { symbol: 'HK00700', market: 'hk', currency: 'HKD', quantity: 10, avgCost: 400, totalCost: 4000, lastPrice: 420, marketValueBase: 4200, unrealizedPnlBase: 200, unrealizedPnlPct: 5, valuationCurrency: 'HKD', priceSource: 'history_close', priceDate: '2026-03-18', priceStale: true, priceAvailable: true },
+      { symbol: 'AAPL', market: 'us', currency: 'USD', quantity: 5, avgCost: 100, totalCost: 500, lastPrice: 0, marketValueBase: 0, unrealizedPnlBase: 0, unrealizedPnlPct: null, valuationCurrency: 'USD', priceSource: 'missing', priceDate: null, priceStale: true, priceAvailable: false },
+    ] }));
+
+    render(<PortfolioPage />);
+
+    await waitForInitialLoad();
+
+    expect(await screen.findByText('HK00700')).toBeInTheDocument();
+    expect(screen.getByText('420.0000')).toBeInTheDocument();
+    expect(screen.getByText('HKD 4,200.00')).toBeInTheDocument();
+    expect(screen.getByText('+5.00%')).toBeInTheDocument();
+    expect(screen.getByText('收盘价 · 2026-03-18')).toBeInTheDocument();
+    expect(screen.getByText('缺价')).toBeInTheDocument();
+    expect(screen.getAllByText('--').length).toBeGreaterThanOrEqual(2);
+
+    const hkRow = screen.getByText('HK00700').closest('tr');
+    const aaplRow = screen.getByText('AAPL').closest('tr');
+    expect(hkRow).not.toBeNull();
+    expect(aaplRow).not.toBeNull();
+
+    const hkRowCells = within(hkRow as HTMLTableRowElement).getAllByRole('cell');
+    const aaplRowCells = within(aaplRow as HTMLTableRowElement).getAllByRole('cell');
+    expect(hkRowCells.at(-2)).toHaveClass('text-success');
+    expect(aaplRowCells.at(-2)).toHaveClass('text-secondary');
+  });
+
+  it('submits manual analysis for a held position without exposing portfolio details in the UI call', async () => {
+    getSnapshot.mockResolvedValueOnce(makeSnapshot({ fxStale: true, positions: [
+      { symbol: 'HK00700', market: 'hk', currency: 'HKD', quantity: 10, avgCost: 400, totalCost: 4000, lastPrice: 420, marketValueBase: 4200, unrealizedPnlBase: 200, unrealizedPnlPct: 5, valuationCurrency: 'HKD', priceSource: 'history_close', priceDate: '2026-03-18', priceStale: true, priceAvailable: true },
+    ] }));
+
+    render(<PortfolioPage />);
+
+    await waitForInitialLoad();
+
+    const row = screen.getByText('HK00700').closest('tr');
+    expect(row).not.toBeNull();
+    fireEvent.click(within(row as HTMLTableRowElement).getByRole('button', { name: '分析' }));
+
+    await waitFor(() => {
+      expect(analyzePosition).toHaveBeenCalledWith('HK00700', {
+        accountId: 1,
+        analysisPhase: 'auto',
+        force: false,
+      });
+    });
+    expect(await screen.findByText('已提交 HK00700 分析任务：task-portfolio-1')).toBeInTheDocument();
   });
 
   it('prefers disabled feedback over empty-pair feedback when refresh is disabled', async () => {
@@ -526,5 +623,32 @@ describe('PortfolioPage FX refresh', () => {
     expect(getSnapshot).toHaveBeenCalledTimes(snapshotCallsAfterSwitch);
     expect(getRisk).toHaveBeenCalledTimes(riskCallsAfterSwitch);
     expect(screen.queryByText('汇率已刷新，共更新 1 对。')).not.toBeInTheDocument();
+  });
+
+  it('deactivates the selected account from the account toolbar and reloads accounts', async () => {
+    getAccounts
+      .mockResolvedValueOnce(makeAccounts([{ id: 1, name: 'Main' }, { id: 2, name: 'Alt' }]))
+      .mockResolvedValueOnce(makeAccounts([{ id: 2, name: 'Alt' }]));
+
+    render(<PortfolioPage />);
+
+    await waitForInitialLoad();
+
+    const accountSelect = screen.getAllByRole('combobox')[0];
+    fireEvent.change(accountSelect, { target: { value: '1' } });
+
+    await waitFor(() => expect(getSnapshot).toHaveBeenLastCalledWith({ accountId: 1, costMethod: 'fifo' }));
+    fireEvent.click(screen.getByRole('button', { name: '删除账户' }));
+
+    const dialog = await screen.findByText('删除持仓账户');
+    expect(dialog.closest('[role="dialog"]') ?? document.body).toHaveTextContent(
+      '删除后该账户会从默认列表、快照、风险和录入入口隐藏',
+    );
+    fireEvent.click(screen.getByRole('button', { name: '确认删除' }));
+
+    await waitFor(() => expect(deleteAccount).toHaveBeenCalledWith(1));
+    await waitFor(() => expect(getAccounts).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByText('Main (#1)')).not.toBeInTheDocument());
+    expect(screen.getByRole('option', { name: 'Alt (#2)' })).toBeInTheDocument();
   });
 });
